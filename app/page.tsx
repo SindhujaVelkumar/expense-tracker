@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Toast from "@/components/Toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import Calculator from "@/components/Calculator";
@@ -22,6 +22,7 @@ export default function Home() {
   const [activeNote, setActiveNote] = useState<Note | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [confirmId, setConfirmId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const showToast = (message: string, type: "success" | "error" = "success") => {
     const id = Date.now();
@@ -29,15 +30,26 @@ export default function Home() {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   };
 
-  const createNote = () => {
-    const newNote: Note = {
-      id: Date.now(),
-      title: "Untitled",
-      content: "",
+  // Load notes on page load
+  useEffect(() => {
+    const fetchNotes = async () => {
+      const res = await fetch("/api/notes");
+      const data = await res.json();
+      setNotes(data);
+      setLoading(false);
     };
-    setNotes((prev) => [...prev, newNote]);
+    fetchNotes();
+  }, []);
+
+  const createNote = async () => {
+    const res = await fetch("/api/notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Untitled", content: "" }),
+    });
+    const newNote = await res.json();
+    setNotes((prev) => [newNote, ...prev]);
     setActiveNote(newNote);
-    showToast("Note created!");
   };
 
   const updateNote = (field: "title" | "content", value: string) => {
@@ -47,7 +59,13 @@ export default function Home() {
     setNotes((prev) => prev.map((n) => (n.id === activeNote.id ? updated : n)));
   };
 
-  const saveNote = () => {
+  const saveNote = async () => {
+    if (!activeNote) return;
+    await fetch(`/api/notes/${activeNote.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: activeNote.title, content: activeNote.content }),
+    });
     showToast("Note saved!");
   };
 
@@ -55,8 +73,9 @@ export default function Home() {
     setConfirmId(id);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (confirmId === null) return;
+    await fetch(`/api/notes/${confirmId}`, { method: "DELETE" });
     setNotes((prev) => prev.filter((n) => n.id !== confirmId));
     if (activeNote?.id === confirmId) setActiveNote(null);
     showToast("Note deleted!", "error");
@@ -87,34 +106,38 @@ export default function Home() {
         >
           + New Note
         </button>
-        <ul className="flex flex-col gap-2">
-          {notes.map((note) => (
-            <li
-              key={note.id}
-              onClick={() => setActiveNote(note)}
-              className={`p-2 rounded cursor-pointer flex justify-between items-center ${
-                activeNote?.id === note.id
-                  ? "bg-blue-100 text-black"
-                  : "hover:bg-gray-100 hover:text-black"
-              }`}
-            >
-              <span className="truncate">{note.title}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(note.id);
-                }}
-                className="text-red-400 hover:text-red-600 text-sm ml-2"
+        {loading ? (
+          <p className="text-gray-400 text-sm">Loading notes...</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {notes.map((note) => (
+              <li
+                key={note.id}
+                onClick={() => setActiveNote(note)}
+                className={`p-2 rounded cursor-pointer flex justify-between items-center ${
+                  activeNote?.id === note.id
+                    ? "bg-blue-100 text-black"
+                    : "hover:bg-gray-100 hover:text-black"
+                }`}
               >
-                ✕
-              </button>
-            </li>
-          ))}
-        </ul>
+                <span className="truncate">{note.title}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(note.id);
+                  }}
+                  className="text-red-400 hover:text-red-600 text-sm ml-2"
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* Editor */}
-      <div className="flex-1 p-6 flex flex-col gap-4">
+      <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
         {activeNote ? (
           <>
             <div className="flex justify-between items-center">
@@ -136,7 +159,7 @@ export default function Home() {
               value={activeNote.content}
               onChange={(e) => updateNote("content", e.target.value)}
               className="flex-1 bg-transparent outline-none resize-none text-white"
-              placeholder="Start writing..."
+              placeholder={`Start writing...\n\nUse + for income and - for expenses:\n+ Salary - Rs. 30,000/-\n- Rent - Rs. 7,000/-`}
             />
             <Calculator content={activeNote.content} />
           </>
