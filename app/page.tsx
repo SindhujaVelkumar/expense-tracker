@@ -2,57 +2,94 @@
 
 import { useState } from "react";
 
-export default function Home() {
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [expenses, setExpenses] = useState<{ name: string; amount: number }[]>([]);
+type Note = {
+  id: number;
+  title: string;
+  content: string;
+};
 
-  const addExpense = () => {
-    if (!name || !amount) return;
-    setExpenses([...expenses, { name, amount: parseFloat(amount) }]);
-    setName("");
-    setAmount("");
+export default function Home() {
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
+
+  const createNote = () => {
+    const newNote: Note = {
+      id: Date.now(),
+      title: "Untitled",
+      content: "",
+    };
+    setNotes([...notes, newNote]);
+    setActiveNote(newNote);
   };
 
-  const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const updateNote = (field: "title" | "content", value: string) => {
+    if (!activeNote) return;
+    const updated = { ...activeNote, [field]: value };
+    setActiveNote(updated);
+    setNotes(notes.map((n) => (n.id === activeNote.id ? updated : n)));
+  };
+
+  const deleteNote = (id: number) => {
+    setNotes(notes.filter((n) => n.id !== id));
+    if (activeNote?.id === id) setActiveNote(null);
+  };
 
   return (
-    <main className="max-w-md mx-auto mt-10 p-4">
-      <h1 className="text-2xl font-bold mb-6">Expense Tracker</h1>
-
-      <div className="flex flex-col gap-3 mb-6">
-        <input
-          type="text"
-          placeholder="Expense name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="border p-2 rounded text-black"
-        />
-        <input
-          type="number"
-          placeholder="Amount"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="border p-2 rounded text-black"
-        />
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      <div className="w-64 border-r p-4 flex flex-col gap-3">
         <button
-          onClick={addExpense}
+          onClick={createNote}
           className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
         >
-          Add Expense
+          + New Note
         </button>
+        <ul className="flex flex-col gap-2">
+          {notes.map((note) => (
+            <li
+              key={note.id}
+              onClick={() => setActiveNote(note)}
+              className={`p-2 rounded cursor-pointer flex justify-between items-center ${
+                activeNote?.id === note.id ? "bg-blue-100 text-black" : "hover:bg-gray-100 hover:text-black"
+              }`}
+            >
+              <span className="truncate">{note.title}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNote(note.id);
+                }}
+                className="text-red-400 hover:text-red-600 text-sm ml-2"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <ul className="flex flex-col gap-2 mb-4">
-        {expenses.map((e, i) => (
-          <li key={i} className="flex justify-between border-b pb-1">
-            <span>{e.name}</span>
-            <span>₹{e.amount}</span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="text-xl font-semibold">Total: ₹{total}</p>
-    </main>
+      {/* Editor */}
+      <div className="flex-1 p-6 flex flex-col gap-4">
+        {activeNote ? (
+          <>
+            <input
+              type="text"
+              value={activeNote.title}
+              onChange={(e) => updateNote("title", e.target.value)}
+              className="text-2xl font-bold bg-transparent outline-none text-white"
+              placeholder="Note title"
+            />
+            <textarea
+              value={activeNote.content}
+              onChange={(e) => updateNote("content", e.target.value)}
+              className="flex-1 bg-transparent outline-none resize-none text-white"
+              placeholder="Start writing..."
+            />
+          </>
+        ) : (
+          <p className="text-gray-400">Select a note or create a new one</p>
+        )}
+      </div>
+    </div>
   );
 }
