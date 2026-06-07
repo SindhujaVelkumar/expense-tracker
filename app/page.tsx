@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Toast from "@/components/Toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import Calculator from "@/components/Calculator";
 
 type Note = {
   id: number;
@@ -137,6 +138,7 @@ export default function Home() {
               className="flex-1 bg-transparent outline-none resize-none text-white"
               placeholder="Start writing..."
             />
+            <Calculator content={activeNote.content} />
           </>
         ) : (
           <p className="text-gray-400">Select a note or create a new one</p>
