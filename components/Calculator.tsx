@@ -15,16 +15,20 @@ function parseLine(line: string): ParsedLine {
     return { label: trimmed, amount: 0, type: "ignored" };
   }
 
-  const type = trimmed.startsWith("+") ? "income" : "expense";
   const withoutSign = trimmed.slice(1).trim();
 
-  // Extract number — strips Rs., /-, commas, spaces
+  // Must contain Rs. OR a number with at least 2 digits to be valid
+  const hasRs = /Rs\.?/i.test(withoutSign);
+  const hasAmount = /\d{2,}/.test(withoutSign);
+  if (!hasRs && !hasAmount) {
+    return { label: withoutSign, amount: 0, type: "ignored" };
+  }
+
+  const type = trimmed.startsWith("+") ? "income" : "expense";
   const numberMatch = withoutSign.match(/[\d,]+(\.\d+)?/);
   if (!numberMatch) return { label: withoutSign, amount: 0, type: "ignored" };
 
   const amount = parseFloat(numberMatch[0].replace(/,/g, ""));
-
-  // Label is everything before the number
   const label = withoutSign.split(/Rs\.?|[\d,]+/)[0].replace(/-$/, "").trim();
 
   return { label, amount, type };
