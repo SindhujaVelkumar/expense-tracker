@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Toast from "@/components/Toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import Calculator from "@/components/Calculator";
+import { signOut } from "next-auth/react";
 
 type Note = {
   id: number;
@@ -134,6 +135,15 @@ export default function Home() {
             ))}
           </ul>
         )}
+        {/* signout button */}
+         <div className="mt-auto">
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="w-full text-left text-gray-400 hover:text-white text-sm p-2 rounded hover:bg-gray-800"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       {/* Editor */}
