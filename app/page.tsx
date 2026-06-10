@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Toast from "@/components/Toast";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import Calculator from "@/components/Calculator";
-import { signOut } from "next-auth/react";
+import Sidebar from "@/components/Sidebar";
 
 type Note = {
   id: number;
@@ -99,52 +99,14 @@ export default function Home() {
         />
       )}
 
-      {/* Sidebar */}
-      <div className="w-64 border-r p-4 flex flex-col gap-3">
-        <button
-          onClick={createNote}
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-        >
-          + New Note
-        </button>
-        {loading ? (
-          <p className="text-gray-400 text-sm">Loading notes...</p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {notes.map((note) => (
-              <li
-                key={note.id}
-                onClick={() => setActiveNote(note)}
-                className={`p-2 rounded cursor-pointer flex justify-between items-center ${
-                  activeNote?.id === note.id
-                    ? "bg-blue-100 text-black"
-                    : "hover:bg-gray-100 hover:text-black"
-                }`}
-              >
-                <span className="truncate">{note.title}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteClick(note.id);
-                  }}
-                  className="text-red-400 hover:text-red-600 text-sm ml-2"
-                >
-                  ✕
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {/* signout button */}
-         <div className="mt-auto">
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="w-full text-left text-gray-400 hover:text-white text-sm p-2 rounded hover:bg-gray-800"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
+        <Sidebar
+          notes={notes}
+          activeNote={activeNote}
+          loading={loading}
+          onSelectNote={setActiveNote}
+          onCreateNote={createNote}
+          onDeleteNote={handleDeleteClick}
+        />
 
       {/* Editor */}
       <div className="flex-1 p-6 flex flex-col gap-4 overflow-y-auto">
