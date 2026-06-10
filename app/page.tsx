@@ -10,6 +10,7 @@ type Note = {
   id: number;
   title: string;
   content: string;
+  folder_id: number | null;
 };
 
 type ToastItem = {
